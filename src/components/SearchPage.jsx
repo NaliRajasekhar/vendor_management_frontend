@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { searchVendors, searchClients, uploadVendorClientsCsv, searchGlobalVendorClients } from '../api/search.js'
 import RowsPerPage from './controls/RowsPerPage.jsx'
 import { notifyError, notifySuccess } from '../lib/notify.js'
+import { apiBase as apiBase } from '../api/base.js'
 
 export default function SearchPage() {
   const [mode, setMode] = useState('clients') // 'vendors' | 'clients'
@@ -77,6 +78,7 @@ export default function SearchPage() {
     try {
       const res = await uploadVendorClientsCsv(file)
       setUploadResult(res)
+      alert("apibase", apiBase);
       notifySuccess(`Inserted ${res.inserted} rows, failed ${res.failed}.`)
     } catch (e) {
       const msg = e?.response?.data?.message || e?.message || 'Upload failed'
@@ -88,6 +90,23 @@ export default function SearchPage() {
     }
   }
 
+  function formatUSPhone(p) {
+    if (!p) return '-'
+    const digits = String(p).replace(/\D/g, '')
+    let local = ''
+    if (digits.length === 11 && digits.startsWith('1')) {
+      local = digits.slice(1)
+    } else if (digits.length >= 10) {
+      local = digits.slice(-10)
+    } else {
+      return p
+    }
+    const area = local.slice(0, 3)
+    const pre = local.slice(3, 6)
+    const line = local.slice(6)
+    return `+1 (${area}) ${pre}-${line}`
+  }
+
   return (
     <div className="app">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -96,7 +115,15 @@ export default function SearchPage() {
               <div className="card-controls"><RowsPerPage value={limit} onChange={(n)=>{ setLimit(n); setOffset(0) }} /></div>
         </div>
       <div className="card search-controls">      
-        <input type="text" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Search vendor, client, email, phone, state, implementation, or contact" style={{minWidth:280}} />
+        <div className="search-input-wrap">
+          <input className="search-input" type="text" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Search vendor, client, email, phone, state, implementation, or contact" style={{minWidth:280}} />
+          <span className="search-input-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+        </div>
         <button className="btn primary" onClick={()=>runSearch(true)} disabled={loading}>Search</button>
         <label className="btn" style={{cursor:'pointer'}}>
           {uploading ? 'Uploading…' : 'Upload CSV'}
@@ -133,7 +160,25 @@ export default function SearchPage() {
         </div> */}
       {error && <div className="alert error">{error}</div>}
       {uploadResult && (
-        <div className="alert success">Inserted {uploadResult.inserted} rows, failed {uploadResult.failed}.</div>
+        <>
+          <div className="alert success">Inserted {uploadResult.inserted} rows, failed {uploadResult.failed}.</div>
+          {uploadResult.errorReportUrl && (
+             
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
+              <a
+                className="btn" style={{ background: 'var(--card)' }}
+                // C:\Logisoft\React\vmanagement\backend\backend\uploads
+              //  href={"http://localhost:4000/uploads/csv-upload-errors-1762799333406.csv"}
+                
+                href={(`${apiBase}${uploadResult.errorReportUrl}`)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Download Error Report
+              </a>
+            </div>
+          )}
+        </>
       )}
 
       <div className="card">
@@ -150,12 +195,12 @@ export default function SearchPage() {
                 <div style={{fontWeight:600}}>Status</div>
                 {items.map((r, i) => (
                   <>
-                    <div key={`v-${i}-n`}>
+                    <div key={`v-${i}-n`} title={r.vendor_name || ''}>
                       <Link className="no-underline" to={`/vendor/${encodeURIComponent(r.vendor_id)}`}>{r.vendor_name}</Link>
                     </div>
-                    <div key={`v-${i}-w`}>{r.website || '-'}</div>
-                    <div key={`v-${i}-c`}>{r.vendor_city || '-'}</div>
-                    <div key={`v-${i}-s`}>{r.vendor_state || '-'}</div>
+                    <div key={`v-${i}-w`} title={r.website || ''}>{r.website || '-'}</div>
+                    <div key={`v-${i}-c`} title={r.vendor_city || ''}>{r.vendor_city || '-'}</div>
+                    <div key={`v-${i}-s`} title={r.vendor_state || ''}>{r.vendor_state || '-'}</div>
                     <div key={`v-${i}-st`}>
                       {(() => {
                         const isActive = typeof r.msa !== 'undefined' ? Boolean(r.msa) : true
@@ -182,18 +227,18 @@ export default function SearchPage() {
                 <div style={{fontWeight:600}}>Status</div>
                 {items.map((r, i) => (
                   <>
-                    <div key={`c-${i}-vn`}>
+                    <div key={`c-${i}-vn`} title={r.vendor_name || ''}>
                       {r.vendor_name ? <Link className="no-underline" to={`/vendor/${encodeURIComponent(r.vendor_id || '')}`}>{r.vendor_name}</Link> : '-'}
                     </div>
-                    <div key={`c-${i}-cn`}>
+                    <div key={`c-${i}-cn`} title={r.client_name || ''}>
                       {r.client_name ? <Link className="no-underline" to={`/vendors/${encodeURIComponent(r.id)}`}>{r.client_name}</Link> : '-'}
                     </div>
-                    <div key={`c-${i}-imp`}>{r.implementation_partner_name || '-'}</div>
-                    <div key={`c-${i}-poc`}>{r.contact_person_name || '-'}</div>
-                    <div key={`c-${i}-em`}>{r.email || '-'}</div>
-                    <div key={`c-${i}-stt`}>{r.client_state || '-'}</div>
-                    <div key={`c-${i}-ph`}>{r.phone || '-'}</div>
-                    <div key={`c-${i}-cty`}>{r.client_city || '-'}</div>
+                    <div key={`c-${i}-imp`} title={r.implementation_partner_name || ''}>{r.implementation_partner_name || '-'}</div>
+                    <div key={`c-${i}-poc`} title={r.contact_person_name || ''}>{r.contact_person_name || '-'}</div>
+                    <div key={`c-${i}-em`} title={r.email || ''}>{r.email || '-'}</div>
+                    <div key={`c-${i}-stt`} title={r.client_state || ''}>{r.client_state || '-'}</div>
+                    <div key={`c-${i}-ph`} title={r.phone || ''}>{formatUSPhone(r.phone)}</div>
+                    <div key={`c-${i}-cty`} title={r.client_city || ''}>{r.client_city || '-'}</div>
                     <div key={`c-${i}-st`}>
                       {(() => {
                         const isActive = typeof r.msa !== 'undefined' ? Boolean(r.msa) : true

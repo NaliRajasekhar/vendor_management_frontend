@@ -11,7 +11,7 @@ export default function VendorPreview() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   
-  const apiBase = import.meta.env.VITE_API_BASE_URL || ''
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:400'
 
   useEffect(() => {
     let active = true
