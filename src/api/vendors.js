@@ -1,4 +1,6 @@
-const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+// const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+import { apiBase as base } from './base.js'
+
 
 async function handle(res) {
   if (!res.ok) {

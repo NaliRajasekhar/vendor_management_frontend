@@ -48,7 +48,7 @@ export default function VendorClientPreview() {
             <div style={{fontWeight:600}}>MSA File</div>
             <div>
               {id && item.msvFileUrl ? (
-                <a href={`${import.meta.env.VITE_API_BASE_URL || ''}/api/vendors/${encodeURIComponent(id)}/msv`}>
+                <a href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/vendors/${encodeURIComponent(id)}/msv`}>
                   View
                 </a>
               ) : '-' }

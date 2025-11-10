@@ -23,7 +23,7 @@ function Layout() {
         <nav className="top-nav">
           <div className="nav-left">
             <Link className="brand" to="/vendors" aria-label="Logisoft Home">
-              <img className="brand-img" src= '/logisoft logo.png' alt="Logisoft logo" />
+              <img className="brand-img" src= '/logisoft-logo.png' alt="Logisoft logo" />
             </Link>
           </div>
           <div className="nav-right">
@@ -82,7 +82,7 @@ export default function App() {
             <Route path="search" element={<RequireAuth><SearchPage /></RequireAuth>} />
             <Route path="login" element={<Login />} />
             <Route path="logout" element={<Logout />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>
