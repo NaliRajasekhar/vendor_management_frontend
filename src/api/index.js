@@ -7,8 +7,8 @@ export async function postContact(data) {
     // If an MSV file is present (File object), use multipart endpoint
     if (data && data.msvFile instanceof File) {
       const form = new FormData()
-      // Append scalar fields
-      const keys = ['vendor','implementation','client','isPrimary','name','phone','email','department','state','city','msaSignedDate']
+      // Append scalar fields (include new 'designation')
+      const keys = ['vendor','implementation','client','isPrimary','name','phone','email','designation','department','state','city','msaSignedDate']
       for (const k of keys) if (typeof data[k] !== 'undefined') form.append(k, String(data[k]))
       form.append('msv', data.msvFile)
       const res = await axios.post(`${base}/api/vendors/with-file`, form, {

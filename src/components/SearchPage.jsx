@@ -5,6 +5,8 @@ import RowsPerPage from './controls/RowsPerPage.jsx'
 import { notifyError, notifySuccess } from '../lib/notify.js'
 import { apiBase as apiBase } from '../api/base.js'
 
+const escapeRegExp = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 export default function SearchPage() {
   const [mode, setMode] = useState('clients') // 'vendors' | 'clients'
   const [q, setQ] = useState('')
@@ -20,6 +22,8 @@ export default function SearchPage() {
   const [total, setTotal] = useState(0)
 
   const fetcher = useMemo(() => (mode === 'vendors' ? searchVendors : searchClients), [mode])
+  const trimmedQuery = useMemo(() => (q || '').trim(), [q])
+  const normalizedQuery = trimmedQuery.toLowerCase()
 
   async function runSearch(resetOffset = false, explicitOffset) {
     try {
@@ -78,7 +82,6 @@ export default function SearchPage() {
     try {
       const res = await uploadVendorClientsCsv(file)
       setUploadResult(res)
-      alert("apibase", apiBase);
       notifySuccess(`Inserted ${res.inserted} rows, failed ${res.failed}.`)
     } catch (e) {
       const msg = e?.response?.data?.message || e?.message || 'Upload failed'
@@ -88,6 +91,46 @@ export default function SearchPage() {
       setUploading(false)
       e.target.value = ''
     }
+  }
+
+  async function downloadCsvTemplate() {
+    // Try backend-provided template first, then fallback to local generation
+    const url = `${apiBase}/api/bulk/vendor-clients/template`
+    try {
+      const res = await fetch(url)
+      if (res.ok) {
+        const blob = await res.blob()
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = 'vendor-clients-template.csv'
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        return
+      }
+    } catch {}
+    // Fallback: generate a simple CSV with headers aligned to upload endpoint
+    const headers = [
+      'client',
+      'implementation',
+      'vendor',
+      'name',
+      'designation',
+      'department',
+      'phone',
+      'email',
+      'city',
+      'state',
+      'msa'
+    ]
+    const csv = `${headers.join(',')}\r\n`
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = 'vendor-clients-template.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
   }
 
   function formatUSPhone(p) {
@@ -107,13 +150,31 @@ export default function SearchPage() {
     return `+1 (${area}) ${pre}-${line}`
   }
 
+  const highlightText = (value, fallback = '-') => {
+    if (value === null || value === undefined || value === '') return fallback
+    if (!trimmedQuery) return value
+    const asString = String(value)
+    const regex = new RegExp(`(${escapeRegExp(trimmedQuery)})`, 'gi')
+    const parts = asString.split(regex)
+    if (parts.length === 1) return asString
+    return parts.map((part, idx) => {
+      if (!part) return null
+      if (part.toLowerCase() === normalizedQuery && normalizedQuery) {
+        return <mark key={`hit-${idx}`} className="highlight-mark">{part}</mark>
+      }
+      return <span key={`txt-${idx}`}>{part}</span>
+    })
+  }
+
   return (
     <div className="app">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-      <h1 className="title">Search List</h1>
-
-              <div className="card-controls"><RowsPerPage value={limit} onChange={(n)=>{ setLimit(n); setOffset(0) }} /></div>
+        <h1 className="title">Search List</h1>
+        <div className="card-controls" style={{display:'flex',alignItems:'center',gap:8}}>
+          <RowsPerPage value={limit} onChange={(n)=>{ setLimit(n); setOffset(0) }} />
+          <button className="btn" style={{ background: '#fff' }} onClick={downloadCsvTemplate} disabled={uploading} >Download CSV Template</button>
         </div>
+      </div>
       <div className="card search-controls">      
         <div className="search-input-wrap">
           <input className="search-input" type="text" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Search vendor, client, email, phone, state, implementation, or contact" style={{minWidth:280}} />
@@ -130,34 +191,7 @@ export default function SearchPage() {
           <input type="file" accept=".csv,text/csv" onChange={onUploadChange} style={{display:'none'}} />
         </label>
       </div>
-      {/* <div className="card" style={{display:'flex',gap:12,alignItems:'center',flexWrap:'wrap'}}>
-       <span style={{color:'#64748b'}}>Limit</span>
-        <input
-          type="text"
-          value={limitInput}
-          onChange={(e)=>{
-            const v = e.target.value
-            if (v === '' || /^\d+$/.test(v)) setLimitInput(v)
-          }}
-          onBlur={() => {
-            const n = Math.min(Math.max(parseInt(limitInput || String(limit), 10) || limit, 1), 500)
-            setLimit(n)
-            setLimitInput(String(n))
-            setOffset(0)
-            runSearch(true)
-          }}
-          onKeyDown={(e)=>{
-            if (e.key === 'Enter') {
-              const n = Math.min(Math.max(parseInt(limitInput || String(limit), 10) || limit, 1), 500)
-              setLimit(n)
-              setLimitInput(String(n))
-              setOffset(0)
-              runSearch(true)
-            }
-          }}
-          style={{width:80}}
-        />
-        </div> */}
+      
       {error && <div className="alert error">{error}</div>}
       {uploadResult && (
         <>
@@ -185,7 +219,18 @@ export default function SearchPage() {
         {loading && <div className="help" style={{color:'#64748b'}}>Loading…</div>}
         {!loading && items.length === 0 && <div className="help" style={{color:'#64748b'}}>No results.</div>}
         {!loading && items.length > 0 && (
-          <div className={mode==='vendors' ? 'results-grid vendors' : 'results-grid clients'}>
+          <>
+            {(() => {
+              const safeTotal = Number.isFinite(total) && total > 0 ? total : (offset + items.length)
+              const start = offset + 1
+              const end = Math.min(offset + items.length, safeTotal)
+              return (
+                <div className="help" style={{ color:'#64748b', padding: '8px 12px' }}>
+                  Showing {start}-{end} of {safeTotal} records
+                </div>
+              )
+            })()}
+            <div className={mode==='vendors' ? 'results-grid vendors' : 'results-grid clients'}>
             {mode === 'vendors' ? (
               <>
                 <div style={{fontWeight:600}}>Vendor</div>
@@ -196,11 +241,13 @@ export default function SearchPage() {
                 {items.map((r, i) => (
                   <>
                     <div key={`v-${i}-n`} title={r.vendor_name || ''}>
-                      <Link className="no-underline" to={`/vendor/${encodeURIComponent(r.vendor_id)}`}>{r.vendor_name}</Link>
+                      <Link className="no-underline" to={`/vendor/${encodeURIComponent(r.vendor_id)}`}>
+                        {highlightText(r.vendor_name, '')}
+                      </Link>
                     </div>
-                    <div key={`v-${i}-w`} title={r.website || ''}>{r.website || '-'}</div>
-                    <div key={`v-${i}-c`} title={r.vendor_city || ''}>{r.vendor_city || '-'}</div>
-                    <div key={`v-${i}-s`} title={r.vendor_state || ''}>{r.vendor_state || '-'}</div>
+                    <div key={`v-${i}-w`} title={r.website || ''}>{highlightText(r.website)}</div>
+                    <div key={`v-${i}-c`} title={r.vendor_city || ''}>{highlightText(r.vendor_city)}</div>
+                    <div key={`v-${i}-s`} title={r.vendor_state || ''}>{highlightText(r.vendor_state)}</div>
                     <div key={`v-${i}-st`}>
                       {(() => {
                         const isActive = typeof r.msa !== 'undefined' ? Boolean(r.msa) : true
@@ -216,29 +263,49 @@ export default function SearchPage() {
               </>
             ) : (
               <>
-                <div style={{fontWeight:600}}>Vendor Name</div>
                 <div style={{fontWeight:600}}>Client</div>
                 <div style={{fontWeight:600}}>Implementation</div>
+                <div style={{fontWeight:600}}>Vendor Name</div>
                 <div style={{fontWeight:600}}>Point of Contact</div>
-                <div style={{fontWeight:600}}>Email</div>
-                <div style={{fontWeight:600}}>State</div>
+                <div style={{fontWeight:600}}>Designation</div>
                 <div style={{fontWeight:600}}>Phone</div>
+                <div style={{fontWeight:600}}>Email</div>
                 <div style={{fontWeight:600}}>City</div>
+                <div style={{fontWeight:600}}>State</div>
                 <div style={{fontWeight:600}}>Status</div>
                 {items.map((r, i) => (
                   <>
-                    <div key={`c-${i}-vn`} title={r.vendor_name || ''}>
-                      {r.vendor_name ? <Link className="no-underline" to={`/vendor/${encodeURIComponent(r.vendor_id || '')}`}>{r.vendor_name}</Link> : '-'}
-                    </div>
-                    <div key={`c-${i}-cn`} title={r.client_name || ''}>
-                      {r.client_name ? <Link className="no-underline" to={`/vendors/${encodeURIComponent(r.id)}`}>{r.client_name}</Link> : '-'}
-                    </div>
-                    <div key={`c-${i}-imp`} title={r.implementation_partner_name || ''}>{r.implementation_partner_name || '-'}</div>
-                    <div key={`c-${i}-poc`} title={r.contact_person_name || ''}>{r.contact_person_name || '-'}</div>
-                    <div key={`c-${i}-em`} title={r.email || ''}>{r.email || '-'}</div>
-                    <div key={`c-${i}-stt`} title={r.client_state || ''}>{r.client_state || '-'}</div>
-                    <div key={`c-${i}-ph`} title={r.phone || ''}>{formatUSPhone(r.phone)}</div>
-                    <div key={`c-${i}-cty`} title={r.client_city || ''}>{r.client_city || '-'}</div>
+                  <div key={`c-${i}-cn`} className="tooltip-cell" title={r.client_name || ''} data-full={r.client_name || ''}>
+                    <span className="truncate">
+                      {r.client_name ? (
+                        <Link className="no-underline" to={`/vendors/${encodeURIComponent(r.id)}`}>
+                          {highlightText(r.client_name, '')}
+                        </Link>
+                      ) : '-'}
+                    </span>
+                  </div>
+                  <div key={`c-${i}-imp`} className="tooltip-cell" title={r.implementation_partner_name || ''} data-full={r.implementation_partner_name || ''}>
+                    <span className="truncate">{highlightText(r.implementation_partner_name)}</span>
+                  </div>
+
+                  <div key={`c-${i}-vn`} className="tooltip-cell" title={r.vendor_name || ''} data-full={r.vendor_name || ''}>
+                    <span className="truncate">
+                      {r.vendor_name ? (
+                        <Link className="no-underline" to={`/vendor/${encodeURIComponent(r.vendor_id || '')}`}>
+                          {highlightText(r.vendor_name, '')}
+                        </Link>
+                      ) : '-'}
+                    </span>
+                  </div>
+                  
+                  <div key={`c-${i}-poc`} className="tooltip-cell" title={r.contact_person_name || ''} data-full={r.contact_person_name || ''}>
+                    <span className="truncate">{highlightText(r.contact_person_name)}</span>
+                  </div>
+                    <div key={`c-${i}-des`} title={r.designation || ''}>{highlightText(r.designation)}</div>
+                    <div key={`c-${i}-ph`} title={r.phone || ''}>{highlightText(formatUSPhone(r.phone))}</div>
+                    <div key={`c-${i}-em`} title={r.email || ''}>{highlightText(r.email)}</div>
+                    <div key={`c-${i}-cty`} title={r.client_city || ''}>{highlightText(r.client_city)}</div>
+                    <div key={`c-${i}-stt`} title={r.client_state || ''}>{highlightText(r.client_state)}</div>
                     <div key={`c-${i}-st`}>
                       {(() => {
                         const isActive = typeof r.msa !== 'undefined' ? Boolean(r.msa) : true
@@ -253,7 +320,8 @@ export default function SearchPage() {
                 ))}
               </>
             )}
-          </div>
+            </div>
+          </>
         )}
       </div>
 

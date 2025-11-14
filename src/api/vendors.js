@@ -53,3 +53,14 @@ export async function deleteVendor(id) {
   await handle(res)
   return true
 }
+
+// Check if a vendor email is unique. Backend should return JSON { unique: boolean }
+export async function checkVendorEmailUnique(email, { excludeId } = {}) {
+  const url = new URL(`${base}/api/vendors/check-email`)
+  url.searchParams.set('email', String(email || ''))
+  if (excludeId) url.searchParams.set('excludeId', String(excludeId))
+  const res = await fetch(url.toString())
+  const data = await handle(res)
+  // Fallback: if server returned nothing, assume not unique to be safe
+  return Boolean(data && data.unique === true)
+}
