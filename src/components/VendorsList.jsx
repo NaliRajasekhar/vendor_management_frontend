@@ -41,6 +41,16 @@ export default function VendorsList() {
   const totalPages = Math.max(1, Math.ceil((items.length || 1) / limit))
   const isLastPage = offset + limit >= items.length
 
+  function formatYmd(input) {
+    if (!input) return '-'
+    const dt = new Date(input)
+    if (isNaN(dt)) return '-'
+    const y = dt.getFullYear()
+    const m = String(dt.getMonth() + 1).padStart(2, '0')
+    const d = String(dt.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
   return (
     <div className="app">
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -48,31 +58,6 @@ export default function VendorsList() {
         <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'flex-end'}}>
         <div className="card-controls"><RowsPerPage value={limit} onChange={(n)=>{ setLimit(n); setOffset(0) }} /></div>
 
-          {/* <span style={{color:'#64748b'}}>Page Size</span>
-          <input
-            type="text"
-            value={limitInput}
-            onChange={(e)=>{
-              const v = e.target.value
-              if (v === '' || /^\d+$/.test(v)) setLimitInput(v)
-            }}
-            onBlur={() => {
-              const n = Math.min(Math.max(parseInt(limitInput || '10', 10) || 10, 1), 500)
-              setLimit(n)
-              setLimitInput(String(n))
-              setOffset(0)
-            }}
-            onKeyDown={(e)=>{
-              if (e.key === 'Enter') {
-                const n = Math.min(Math.max(parseInt(limitInput || '10', 10) || 10, 1), 500)
-                setLimit(n)
-                setLimitInput(String(n))
-                setOffset(0)
-              }
-            }}
-            style={{width:80}}
-          /> */}
-          {/* <div style={{color:'#64748b'}}>Signed in as {user?.email}</div> */}
         </div>
       </div>
       <div className="card">
@@ -81,19 +66,21 @@ export default function VendorsList() {
         {!loading && !error && items.length === 0 && <div className="help" style={{color:'#64748b'}}>No vendors yet. Add one from the form.</div>}
         {!loading && !error && items.length > 0 && (
           <div className="results-grid vendors vendors-list">
-            <div style={{fontWeight:600}}>Vendor Name</div>
-            <div style={{fontWeight:600}}>Implementation</div>
             <div style={{fontWeight:600}}>Client</div>
+            <div style={{fontWeight:600}}>Implementation</div>
+            <div style={{fontWeight:600}}>Vendor Name</div>
             <div style={{fontWeight:600}}>Status</div>
+            <div style={{fontWeight:600}}>Created</div>
             <div style={{fontWeight:600}}>Edit</div>
 
             {pageItems.map((v, i) => (
               <>
-                <div key={`vl-${i}-vendor`}>{v.vendor || '-'}</div>
-                <div key={`vl-${i}-impl`}>{v.implementation || '-'}</div>
-                <div key={`vl-${i}-client`}>
+              <div key={`vl-${i}-client`}>
                   {v.client}
                 </div>
+                <div key={`vl-${i}-impl`}>{v.implementation || '-'}</div>
+                <div key={`vl-${i}-vendor`}>{v.vendor || '-'}</div>
+                
                 <div key={`vl-${i}-status`}>
                   {(() => {
                     const isActive = v.isPrimary !== false
@@ -104,6 +91,7 @@ export default function VendorsList() {
                     )
                   })()}
                 </div>
+                <div key={`vl-${i}-created`}>{formatYmd(v.updatedAt || v.updated_at)}</div>
                 <div key={`vl-${i}-edit`}>
                   <Link to={`/vendors/${v.id}/edit`} aria-label="Edit vendor" title="Edit">
                     <EditIcon style={{ verticalAlign:'middle', color:'#334155' }} fontSize="small" />

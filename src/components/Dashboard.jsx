@@ -23,7 +23,7 @@ export default function Dashboard() {
   }, [])
 
   const cards = [
-    { value: data.vendors, label: 'Toatal Vendors' },
+    { value: data.vendors, label: 'Total Vendors' },
     { value: data.clients, label: 'Total Clients' },
     { value: data.msa, label: 'Total MSA' },
   ]

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import '../styles/contact.css'
 import { validateForm, firstErrorKey } from '../lib/validation.js'
 import { postContact } from '../api/index.js'
+import { checkVendorEmailUnique } from '../api/vendors.js'
 import { notifyError, notifySuccess } from '../lib/notify.js'
 import SearchableSelect from './controls/SearchableSelect.jsx'
 
@@ -14,6 +15,7 @@ const initialForm = {
   name: '',
   phone: '',
   email: '',
+  designation: '',
   department: '',
   state: '',
   city: '',
@@ -24,111 +26,84 @@ const initialForm = {
 // United States states and a small set of example cities per state.
 // Extend CITIES_BY_STATE as needed without changing form logic.
 const US_STATES = [
-  { code: 'AL', name: 'Alabama' },
-  { code: 'AK', name: 'Alaska' },
-  { code: 'AZ', name: 'Arizona' },
-  { code: 'AR', name: 'Arkansas' },
-  { code: 'CA', name: 'California' },
-  { code: 'CO', name: 'Colorado' },
-  { code: 'CT', name: 'Connecticut' },
-  { code: 'DE', name: 'Delaware' },
-  { code: 'DC', name: 'District of Columbia' },
-  { code: 'FL', name: 'Florida' },
-  { code: 'GA', name: 'Georgia' },
-  { code: 'HI', name: 'Hawaii' },
-  { code: 'ID', name: 'Idaho' },
-  { code: 'IL', name: 'Illinois' },
-  { code: 'IN', name: 'Indiana' },
-  { code: 'IA', name: 'Iowa' },
-  { code: 'KS', name: 'Kansas' },
-  { code: 'KY', name: 'Kentucky' },
-  { code: 'LA', name: 'Louisiana' },
-  { code: 'ME', name: 'Maine' },
-  { code: 'MD', name: 'Maryland' },
-  { code: 'MA', name: 'Massachusetts' },
-  { code: 'MI', name: 'Michigan' },
-  { code: 'MN', name: 'Minnesota' },
-  { code: 'MS', name: 'Mississippi' },
-  { code: 'MO', name: 'Missouri' },
-  { code: 'MT', name: 'Montana' },
-  { code: 'NE', name: 'Nebraska' },
-  { code: 'NV', name: 'Nevada' },
-  { code: 'NH', name: 'New Hampshire' },
-  { code: 'NJ', name: 'New Jersey' },
-  { code: 'NM', name: 'New Mexico' },
-  { code: 'NY', name: 'New York' },
-  { code: 'NC', name: 'North Carolina' },
-  { code: 'ND', name: 'North Dakota' },
-  { code: 'OH', name: 'Ohio' },
-  { code: 'OK', name: 'Oklahoma' },
-  { code: 'OR', name: 'Oregon' },
-  { code: 'PA', name: 'Pennsylvania' },
-  { code: 'RI', name: 'Rhode Island' },
-  { code: 'SC', name: 'South Carolina' },
-  { code: 'SD', name: 'South Dakota' },
-  { code: 'TN', name: 'Tennessee' },
-  { code: 'TX', name: 'Texas' },
-  { code: 'UT', name: 'Utah' },
-  { code: 'VT', name: 'Vermont' },
-  { code: 'VA', name: 'Virginia' },
-  { code: 'WA', name: 'Washington' },
-  { code: 'WV', name: 'West Virginia' },
-  { code: 'WI', name: 'Wisconsin' },
-  { code: 'WY', name: 'Wyoming' },
+  { code: 'Alabama', name: 'Alabama' },
+  { code: 'Alaska', name: 'Alaska' },
+  { code: 'Arizona', name: 'Arizona' },
+  { code: 'Arkansas', name: 'Arkansas' },
+  { code: 'California', name: 'California' },
+  { code: 'Colorado', name: 'Colorado' },
+  { code: 'Connecticut', name: 'Connecticut' },
+  { code: 'Delaware', name: 'Delaware' },
+  { code: 'District of Columbia', name: 'District of Columbia' },
+  { code: 'Florida', name: 'Florida' },
+  { code: 'Georgia', name: 'Georgia' },
+  { code: 'Hawaii', name: 'Hawaii' },
+  { code: 'Idaho', name: 'Idaho' },
+  { code: 'Illinois', name: 'Illinois' },
+  { code: 'Indiana', name: 'Indiana' },
+  { code: 'Iowa', name: 'Iowa' },
+  { code: 'Kansas', name: 'Kansas' },
+  { code: 'Kentucky', name: 'Kentucky' },
+  { code: 'Louisiana', name: 'Louisiana' },
+  { code: 'Maine', name: 'Maine' },
+  { code: 'Maryland', name: 'Maryland' },
+  { code: 'Massachusetts', name: 'Massachusetts' },
+  { code: 'Michigan', name: 'Michigan' },
+  { code: 'Minnesota', name: 'Minnesota' },
+  { code: 'Mississippi', name: 'Mississippi' },
+  { code: 'Missouri', name: 'Missouri' },
+  { code: 'Montana', name: 'Montana' },
+  { code: 'Nebraska', name: 'Nebraska' },
+  { code: 'Nevada', name: 'Nevada' },
+  { code: 'New Hampshire', name: 'New Hampshire' },
+  { code: 'New Jersey', name: 'New Jersey' },
+  { code: 'New Mexico', name: 'New Mexico' },
+  { code: 'New York', name: 'New York' },
+  { code: 'North Carolina', name: 'North Carolina' },
+  { code: 'North Dakota', name: 'North Dakota' },
+  { code: 'Ohio', name: 'Ohio' },
+  { code: 'Oklahoma', name: 'Oklahoma' },
+  { code: 'Oregon', name: 'Oregon' },
+  { code: 'Pennsylvania', name: 'Pennsylvania' },
+  { code: 'Rhode Island', name: 'Rhode Island' },
+  { code: 'South Carolina', name: 'South Carolina' },
+  { code: 'South Dakota', name: 'South Dakota' },
+  { code: 'Tennessee', name: 'Tennessee' },
+  { code: 'Texas', name: 'Texas' },
+  { code: 'Utah', name: 'Utah' },
+  { code: 'Vermont', name: 'Vermont' },
+  { code: 'Virginia', name: 'Virginia' },
+  { code: 'Washington', name: 'Washington' },
+  { code: 'West Virginia', name: 'West Virginia' },
+  { code: 'Wisconsin', name: 'Wisconsin' },
+  { code: 'Wyoming', name: 'Wyoming' },
 ]
 
-const CITIES_BY_STATE = {
-  AL: ['Birmingham', 'Montgomery', 'Mobile', 'Huntsville'],
-  AK: ['Anchorage', 'Juneau', 'Fairbanks'],
-  AZ: ['Phoenix', 'Tucson', 'Mesa', 'Scottsdale'],
-  AR: ['Little Rock', 'Fayetteville', 'Fort Smith'],
-  CA: ['Los Angeles', 'San Diego', 'San Jose', 'San Francisco', 'Sacramento'],
-  CO: ['Denver', 'Colorado Springs', 'Aurora', 'Fort Collins'],
-  CT: ['Bridgeport', 'New Haven', 'Stamford', 'Hartford'],
-  DE: ['Wilmington', 'Dover', 'Newark'],
-  DC: ['Washington'],
-  FL: ['Miami', 'Orlando', 'Tampa', 'Jacksonville'],
-  GA: ['Atlanta', 'Savannah', 'Augusta', 'Columbus'],
-  HI: ['Honolulu', 'Hilo', 'Kailua'],
-  ID: ['Boise', 'Meridian', 'Idaho Falls'],
-  IL: ['Chicago', 'Aurora', 'Naperville', 'Springfield'],
-  IN: ['Indianapolis', 'Fort Wayne', 'Evansville'],
-  IA: ['Des Moines', 'Cedar Rapids', 'Davenport'],
-  KS: ['Wichita', 'Overland Park', 'Kansas City'],
-  KY: ['Louisville', 'Lexington', 'Bowling Green'],
-  LA: ['New Orleans', 'Baton Rouge', 'Shreveport'],
-  ME: ['Portland', 'Lewiston', 'Bangor'],
-  MD: ['Baltimore', 'Frederick', 'Gaithersburg'],
-  MA: ['Boston', 'Worcester', 'Springfield'],
-  MI: ['Detroit', 'Grand Rapids', 'Warren', 'Ann Arbor'],
-  MN: ['Minneapolis', 'Saint Paul', 'Rochester'],
-  MS: ['Jackson', 'Gulfport', 'Southaven'],
-  MO: ['Kansas City', 'St. Louis', 'Springfield'],
-  MT: ['Billings', 'Missoula', 'Great Falls'],
-  NE: ['Omaha', 'Lincoln', 'Bellevue'],
-  NV: ['Las Vegas', 'Henderson', 'Reno'],
-  NH: ['Manchester', 'Nashua', 'Concord'],
-  NJ: ['Newark', 'Jersey City', 'Paterson'],
-  NM: ['Albuquerque', 'Las Cruces', 'Santa Fe'],
-  NY: ['New York', 'Buffalo', 'Rochester', 'Syracuse'],
-  NC: ['Charlotte', 'Raleigh', 'Greensboro', 'Durham'],
-  ND: ['Fargo', 'Bismarck', 'Grand Forks'],
-  OH: ['Columbus', 'Cleveland', 'Cincinnati', 'Toledo'],
-  OK: ['Oklahoma City', 'Tulsa', 'Norman'],
-  OR: ['Portland', 'Eugene', 'Salem'],
-  PA: ['Philadelphia', 'Pittsburgh', 'Allentown'],
-  RI: ['Providence', 'Warwick', 'Cranston'],
-  SC: ['Columbia', 'Charleston', 'Greenville'],
-  SD: ['Sioux Falls', 'Rapid City'],
-  TN: ['Nashville', 'Memphis', 'Knoxville'],
-  TX: ['Houston', 'San Antonio', 'Dallas', 'Austin'],
-  UT: ['Salt Lake City', 'West Valley City', 'Provo'],
-  VT: ['Burlington', 'South Burlington', 'Rutland'],
-  VA: ['Virginia Beach', 'Norfolk', 'Richmond'],
-  WA: ['Seattle', 'Spokane', 'Tacoma'],
-  WV: ['Charleston', 'Huntington', 'Morgantown'],
-  WI: ['Milwaukee', 'Madison', 'Green Bay'],
-  WY: ['Cheyenne', 'Casper', 'Laramie'],
+// Abbreviation→Name mapping to normalize legacy values like "NJ" or "ny".
+const STATE_ABBREV_TO_NAME = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
+  CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky',
+  LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
+  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire',
+  NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota',
+  OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia',
+  WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming'
+}
+
+// Convert various inputs (e.g., "new jersey", "NJ") to canonical state name
+function canonicalizeState(input) {
+  if (input === undefined || input === null) return ''
+  const raw = String(input).trim()
+  if (!raw) return ''
+  const squished = raw.replace(/\s+/g, ' ')
+  const lower = squished.toLowerCase()
+  const byName = US_STATES.find(s => s.name.toLowerCase() === lower)
+  if (byName) return byName.name
+  const abbr = squished.toUpperCase()
+  if (STATE_ABBREV_TO_NAME[abbr]) return STATE_ABBREV_TO_NAME[abbr]
+  return raw
 }
 
 export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Save' }) {
@@ -139,6 +114,8 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [emailChecking, setEmailChecking] = useState(false)
+  const [emailUniqueError, setEmailUniqueError] = useState('')
 
   const fieldRefs = useRef({})
   const [msvFile, setMsvFile] = useState(null)
@@ -149,7 +126,8 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
     if (!initialValues) return
     const normDate = initialValues.msaSignedDate ? String(initialValues.msaSignedDate).slice(0, 10) : ''
     const normIsPrimary = (initialValues.isPrimary === true) || (initialValues.isPrimary === 'true') || (initialValues.isPrimary === 1) || (initialValues.isPrimary === '1')
-    setForm((f) => ({ ...f, ...initialValues, msaSignedDate: normDate, isPrimary: normIsPrimary }))
+    const normState = canonicalizeState(initialValues.state)
+    setForm((f) => ({ ...f, ...initialValues, state: normState, msaSignedDate: normDate, isPrimary: normIsPrimary }))
     const KNOWN_DEPTS = ['Engineering','Implementation','Support','Sales']
     const dep = (initialValues.department || '').trim()
     if (dep && !KNOWN_DEPTS.includes(dep)) setDepartmentMode('other'); else setDepartmentMode('list')
@@ -169,6 +147,9 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
     else if (e?.target?.type === 'file') value = e.target.files?.[0] || null
     else value = e?.target?.value
     setForm((f) => ({ ...f, [key]: value }))
+    if (key === 'email') {
+      setEmailUniqueError('')
+    }
   }
 
   const reset = () => {
@@ -195,6 +176,26 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
       const key = firstErrorKey(errs)
       if (key && fieldRefs.current[key]) fieldRefs.current[key].focus()
       return
+    }
+
+    // Enforce email uniqueness before submit
+    try {
+      setEmailChecking(true)
+      const unique = await checkVendorEmailUnique(form.email, { excludeId: form?.id })
+      if (!unique) {
+        setEmailUniqueError('Email already exists')
+        setTouched((t) => ({ ...t, email: true }))
+        fieldRefs.current.email?.focus()
+        return
+      }
+    } catch (err) {
+      // If the check fails (network/server), block submit to avoid duplicates
+      setEmailUniqueError('Could not verify email uniqueness')
+      setTouched((t) => ({ ...t, email: true }))
+      fieldRefs.current.email?.focus()
+      return
+    } finally {
+      setEmailChecking(false)
     }
 
     try {
@@ -304,9 +305,37 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
 
         <div className="field">
           <label htmlFor="email">Email</label>
-          <input id="email" ref={(el)=>fieldRefs.current.email=el} aria-invalid={Boolean(touched.email && currentErrors.email)}
-            type="email" placeholder="name@company.com" value={form.email} onChange={update('email')} onBlur={()=>setTouched(t=>({...t, email:true}))} />
+          <input
+            id="email"
+            ref={(el)=>fieldRefs.current.email=el}
+            aria-invalid={Boolean(touched.email && (currentErrors.email || emailUniqueError))}
+            type="email"
+            placeholder="name@company.com"
+            value={form.email}
+            onChange={update('email')}
+            onBlur={async ()=>{
+              setTouched(t=>({...t, email:true}))
+              const email = String(form.email || '').trim()
+              if (!email) return
+              if (currentErrors.email) return
+              try {
+                setEmailChecking(true)
+                const unique = await checkVendorEmailUnique(email, { excludeId: form?.id })
+                setEmailUniqueError(unique ? '' : 'Email already exists')
+              } catch {
+                setEmailUniqueError('Could not verify email uniqueness')
+              } finally {
+                setEmailChecking(false)
+              }
+            }}
+          />
           {touched.email && currentErrors.email && <span className="help error">{currentErrors.email}</span>}
+          {touched.email && !currentErrors.email && emailUniqueError && (
+            <span className="help error">{emailUniqueError}</span>
+          )}
+          {emailChecking && (
+            <span className="help" style={{color:'#64748b'}}>Checking email…</span>
+          )}
         </div>
 
         <div className="field">
@@ -326,10 +355,14 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
             }}
           >
             <option value="">Select department</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Implementation">Implementation</option>
-            <option value="Support">Support</option>
             <option value="Sales">Sales</option>
+            <option value="Recruiting">Recruiting</option>
+            <option value="Contracts">Contracts</option>
+            <option value="accounts">Accounts</option>
+            <option value="support">Support</option>
+            <option value="HR">HR</option>
+            <option value="operations">Operations</option>
+            <option value="immigration">Immigration</option>
             <option value="__OTHER__">Other…</option>
           </select>
           {departmentMode === 'other' && (
@@ -345,13 +378,24 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
         </div>
 
         <div className="field">
+          <label htmlFor="designation">Designation</label>
+          <input
+            id="designation"
+            type="text"
+            placeholder="e.g., Manager"
+            value={form.designation}
+            onChange={update('designation')}
+          />
+        </div>
+
+        <div className="field">
           <label htmlFor="state">State</label>
           <SearchableSelect
             id="state"
             value={form.state}
             onChange={(val)=> setForm(f=>({ ...f, state: val }))}
-            options={US_STATES.map(s => ({ value: s.code, label: `${s.name} (${s.code})` }))}
-            placeholder="Search state (e.g., New, CA, TX)"
+            options={US_STATES.map(s => ({ value: s.code, label: s.name }))}
+            placeholder="Search state (e.g., New, Texas)"
           />
         </div>
 
@@ -378,7 +422,7 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
           />
           {form.msvFileUrl && (
             <div className="help">
-              Current file: <a href={`${import.meta.env.VITE_API_BASE_URL || ''}/api/vendors/${encodeURIComponent(form.id || '')}/msv`} target="_blank" rel="noreferrer">View</a>
+              Current file: <a href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/vendors/${encodeURIComponent(form.id || '')}/msv`} target="_blank" rel="noreferrer">View</a>
             </div>
           )}
         </div>

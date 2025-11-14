@@ -42,6 +42,170 @@ body {
     0 10px 24px rgba(15, 23, 42, 0.06),
     0 1px 2px rgba(15, 23, 42, 0.05);
 }
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.preview-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 24px;
+  background: linear-gradient(180deg, #f8fbff, #f4f7fd);
+  border: 1px solid #e3ebf7;
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+.preview-label {
+  margin: 0 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #8a94ab;
+}
+.preview-identity {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.preview-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 600;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.preview-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f1e3c;
+}
+.preview-caption {
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 4px;
+}
+.preview-head-meta {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.preview-status-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preview-status-label {
+  font-size: 13px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.preview-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.preview-status-pill.active {
+  color: #166534;
+  background: #dcfce7;
+  border-color: #86efac;
+}
+.preview-status-pill.inactive {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+.preview-contact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+.preview-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a;
+}
+.preview-contact-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #3730a3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.preview-contact-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.preview-section {
+  border: 1px solid #e5eaf5;
+  border-radius: 16px;
+  padding: 22px 24px 26px;
+  background: #fbfcff;
+}
+.preview-section-title {
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.preview-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px 28px;
+}
+.preview-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.preview-info-label {
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+.preview-info-value {
+  font-size: 16px;
+  color: #0f1e3c;
+  font-weight: 500;
+}
+.preview-actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.text-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.text-link:hover {
+  text-decoration: underline;
+}
+.highlight-mark {
+  background: #fef08a;
+  color: #92400e;
+  border-radius: 4px;
+  padding: 0 2px;
+}
 /* top-right controls inside cards */
 .card .card-controls { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; }
 .rows-per-page { display: inline-flex; align-items: center; gap: 8px; }
@@ -206,17 +370,110 @@ input:hover, select:hover { transform: translateY(-0.5px); }
 }
 
 /* Results grid: table-like presentation via CSS grid */
-.results-grid { display: grid; gap: 0; align-items: center; }
-.results-grid > div { padding: 10px 12px; border-bottom: 1px solid #eef2f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.results-grid { display: grid; gap: 0; align-items: center; border: 1px solid #e5eaf2; border-radius: 12px; background: #fff; overflow-x: auto; }
+.results-grid > div { padding: 12px 14px; min-height: 44px; display: flex; align-items: center; border-bottom: 1px solid #eef2f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
 .results-grid.vendors { grid-template-columns: 2fr 2fr 1fr 1fr 1fr; }
-.results-grid.vendors.vendors-list { grid-template-columns: repeat(5, 1fr)}
-.results-grid.vendors.vendors-list > div:nth-child(5n+4),
-.results-grid.vendors.vendors-list > div:nth-child(5n+5) {
+.results-grid.vendors.vendors-list { grid-template-columns: repeat(6, 1fr)}
+.results-grid.vendors.vendors-list > div:nth-child(6n+4),
+.results-grid.vendors.vendors-list > div:nth-child(6n+5),
+.results-grid.vendors.vendors-list > div:nth-child(6n+6) {
   text-align: center;
 }
-.results-grid.clients { grid-template-columns: 2fr 2fr 1.5fr 1.5fr 2fr 1fr 1fr 1fr 1fr; }
+.results-grid.clients { grid-template-columns: 1.4fr 1.4fr 1.2fr 1.2fr 0.9fr max-content max-content 1fr 1fr 1fr; }
 .results-grid.vendors > div:nth-child(-n+5),
-.results-grid.clients > div:nth-child(-n+9) {
+.results-grid.clients > div:nth-child(-n+10) {
+  background: #f7fbff;
+  color: #0e2a47;
+  border-bottom: 2px solid #e3eefc;
+  font-weight: 600;
+}
+
+/* Tighter paddings for the first four client columns (client, implementation, vendor, contact) */
+.results-grid.clients > div:nth-child(10n + 1),
+.results-grid.clients > div:nth-child(10n + 2),
+.results-grid.clients > div:nth-child(10n + 3),
+.results-grid.clients > div:nth-child(10n + 4) {
+  padding-right: 8px;
+}
+
+/* Truncation helper for inner content so we can show tooltips without breaking ellipsis */
+.truncate { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Pretty tooltip on hover using data-full; works on .tooltip-cell */
+.tooltip-cell { position: relative; overflow: visible; }
+.tooltip-cell:hover::after {
+  content: attr(data-full);
+  position: absolute;
+  left: 0;
+  top: 100%;
+  transform: translateY(8px);
+  background: #0e2a47;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(15,23,42,.15);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 360px;
+  z-index: 30;
+  white-space: normal;
+}
+.tooltip-cell:hover::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: calc(100% + 4px);
+  width: 10px;
+  height: 10px;
+  background: #0e2a47;
+  transform: rotate(45deg);
+  z-index: 29;
+}
+.tooltip-cell a { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Phone (6th) and Email (7th) should be single-line and fully visible; allow horizontal scroll if needed */
+.results-grid.clients > div:nth-child(10n + 6),
+.results-grid.clients > div:nth-child(10n + 7) {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+.results-grid.clients > div:nth-child(10n + 6) a,
+.results-grid.clients > div:nth-child(10n + 7) a {
+  white-space: nowrap;
+  display: inline;
+}
+
+/* Zebra rows for readability (headers excluded) */
+/* Search page - vendors mode (5 cols per row): shade even rows */
+.results-grid.vendors > div:nth-child(10n + 6),
+.results-grid.vendors > div:nth-child(10n + 7),
+.results-grid.vendors > div:nth-child(10n + 8),
+.results-grid.vendors > div:nth-child(10n + 9),
+.results-grid.vendors > div:nth-child(10n + 10) { background: #fafcff; }
+
+/* Search page - clients mode (10 cols per row): shade even rows */
+.results-grid.clients > div:nth-child(20n + 11),
+.results-grid.clients > div:nth-child(20n + 12),
+.results-grid.clients > div:nth-child(20n + 13),
+.results-grid.clients > div:nth-child(20n + 14),
+.results-grid.clients > div:nth-child(20n + 15),
+.results-grid.clients > div:nth-child(20n + 16),
+.results-grid.clients > div:nth-child(20n + 17),
+.results-grid.clients > div:nth-child(20n + 18),
+.results-grid.clients > div:nth-child(20n + 19),
+.results-grid.clients > div:nth-child(20n + 20) { background: #fafcff; }
+
+/* Vendors list page (6 cols per row): shade even rows */
+.results-grid.vendors.vendors-list > div:nth-child(12n + 7),
+.results-grid.vendors.vendors-list > div:nth-child(12n + 8),
+.results-grid.vendors.vendors-list > div:nth-child(12n + 9),
+.results-grid.vendors.vendors-list > div:nth-child(12n + 10),
+.results-grid.vendors.vendors-list > div:nth-child(12n + 11),
+.results-grid.vendors.vendors-list > div:nth-child(12n + 12) { background: #fafcff; }
+
+/* Vendors list has 6 header columns */
+.results-grid.vendors.vendors-list > div:nth-child(-n+6) {
   background: #f7fbff;
   color: #0e2a47;
   border-bottom: 2px solid #e3eefc;
