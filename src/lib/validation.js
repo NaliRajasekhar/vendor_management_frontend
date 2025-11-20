@@ -5,9 +5,9 @@ export function validateForm(values) {
     if (!values[key] || String(values[key]).trim() === '') errors[key] = msg
   }
 
-  req('vendor')
-  req('implementation')
-  req('client')
+  req('vendor', 'Vendor Required')
+  req('implementation', 'Implementation Required')
+  req('client', 'Client Required')
   req('name', 'Enter full name')
 
   // Email validation

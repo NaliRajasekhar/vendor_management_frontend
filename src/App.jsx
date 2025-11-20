@@ -1,6 +1,5 @@
 import ContactForm from './components/ContactForm.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
-import { createVendor } from './api/vendors.js'
 import { postContact } from './api/index.js'
 import SearchPage from './components/SearchPage.jsx'
 import { BrowserRouter, Routes, Route, Navigate, Link, Outlet } from 'react-router-dom'
@@ -15,8 +14,12 @@ import Dashboard from './components/Dashboard.jsx'
 import VendorClientPreview from './components/VendorClientPreview.jsx'
 import VendorPreview from './components/VendorPreview.jsx'
 
+const MANAGER_ROLES = ['admin', 'employee']
+const VIEWER_ROLES = ['admin', 'employee', 'user']
+
 function Layout() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, hasRole } = useAuth()
+  const canManage = hasRole(...MANAGER_ROLES)
   return (
     <div>
       {isAuthenticated && (
@@ -28,13 +31,16 @@ function Layout() {
           </div>
           <div className="nav-right">
             <Link className="btn" to="/dashboard">Dashboard</Link>
-            <Link className="btn" to="/">Add Vendor</Link>
+            {canManage && <Link className="btn" to="/">Add Vendor</Link>}
             <Link className="btn" to="/vendors">Active Vendors List</Link>
             <Link className="btn" to="/search">Search Vendors</Link>
             <div className="profile">
               <AccountCircleIcon className="avatar" />
               <div className="profile-menu">
-                <div className="profile-name">{user?.email}</div>
+                <div className="profile-name">
+                  {user?.email}
+                  {user?.role && <span style={{ display: 'block', fontSize: 12, color: '#94a3b8' }}>{user.role}</span>}
+                </div>
                 <Link className="profile-logout" to="/logout">Logout</Link>
               </div>
             </div>
@@ -46,9 +52,12 @@ function Layout() {
   )
 }
 
-function RequireAuth({ children }) {
-  const { isAuthenticated } = useAuth()
+function RequireAuth({ children, roles }) {
+  const { isAuthenticated, hasRole } = useAuth()
   if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (roles && roles.length > 0 && !hasRole(...roles)) {
+    return <Navigate to="/dashboard" replace />
+  }
   return children
 }
 
@@ -56,7 +65,7 @@ function NewVendorPage() {
   async function handleSubmit(values) {
     // Route through contacts API to support MSV upload
     await postContact(values)
-    notifySuccess('Saved contact to server.')
+    // notifySuccess('Saved contact to server.')
   }
   return (
     <div className="app">
@@ -73,13 +82,13 @@ export default function App() {
         <Toaster position="top-right" gutter={8} />
         <Routes>
           <Route element={<Layout />}> 
-            <Route index element={<RequireAuth><NewVendorPage /></RequireAuth>} />
-            <Route path="dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-            <Route path="vendors" element={<RequireAuth><VendorsList /></RequireAuth>} />
-            <Route path="vendors/:id" element={<RequireAuth><VendorClientPreview /></RequireAuth>} />
-            <Route path="vendors/:id/edit" element={<RequireAuth><EditVendor /></RequireAuth>} />
-            <Route path="vendor/:vendorId" element={<RequireAuth><VendorPreview /></RequireAuth>} />
-            <Route path="search" element={<RequireAuth><SearchPage /></RequireAuth>} />
+            <Route index element={<RequireAuth roles={MANAGER_ROLES}><NewVendorPage /></RequireAuth>} />
+            <Route path="dashboard" element={<RequireAuth roles={VIEWER_ROLES}><Dashboard /></RequireAuth>} />
+            <Route path="vendors" element={<RequireAuth roles={VIEWER_ROLES}><VendorsList /></RequireAuth>} />
+            <Route path="vendors/:id" element={<RequireAuth roles={VIEWER_ROLES}><VendorClientPreview /></RequireAuth>} />
+            <Route path="vendors/:id/edit" element={<RequireAuth roles={MANAGER_ROLES}><EditVendor /></RequireAuth>} />
+            <Route path="vendor/:vendorId" element={<RequireAuth roles={VIEWER_ROLES}><VendorPreview /></RequireAuth>} />
+            <Route path="search" element={<RequireAuth roles={VIEWER_ROLES}><SearchPage /></RequireAuth>} />
             <Route path="login" element={<Login />} />
             <Route path="logout" element={<Logout />} />
             <Route path="*" element={<Navigate to="/login" replace />} />

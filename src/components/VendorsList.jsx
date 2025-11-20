@@ -14,7 +14,8 @@ export default function VendorsList() {
   const [offset, setOffset] = useState(0)
   const [limitInput, setLimitInput] = useState('10')
 
-  const { user } = useAuth()
+  const { hasRole } = useAuth()
+  const canEdit = hasRole('admin', 'employee')
   useEffect(() => {
     let cancelled = false
     async function load() {
@@ -93,9 +94,13 @@ export default function VendorsList() {
                 </div>
                 <div key={`vl-${i}-created`}>{formatYmd(v.updatedAt || v.updated_at)}</div>
                 <div key={`vl-${i}-edit`}>
-                  <Link to={`/vendors/${v.id}/edit`} aria-label="Edit vendor" title="Edit">
-                    <EditIcon style={{ verticalAlign:'middle', color:'#334155' }} fontSize="small" />
-                  </Link>
+                  {canEdit ? (
+                    <Link to={`/vendors/${v.id}/edit`} aria-label="Edit vendor" title="Edit">
+                      <EditIcon style={{ verticalAlign:'middle', color:'#334155' }} fontSize="small" />
+                    </Link>
+                  ) : (
+                    <span style={{ color:'#94a3b8' }}>—</span>
+                  )}
                 </div>
               </>
             ))}

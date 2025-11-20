@@ -17,24 +17,27 @@ No external UI library is required; styles live in `src/styles.css`.
 
 ## New Pages & Routing
 
-- `GET /login` → Login page (mock auth stored in localStorage)
-- `GET /logout` → Logs out and redirects to login
-- `GET /` → New Vendor (uses the same ContactForm; saves locally to the vendor store)
-- `GET /vendors` → List of active vendors (from localStorage)
-- `GET /vendors/:id/edit` → Edit page, prefilled using the vendor store
+- `GET /login` – Authenticates against the backend and stores the issued JWT.
+- `GET /logout` – Clears the auth session and redirects to login.
+- `GET /` – Add Vendor form (requires `admin` or `employee` role).
+- `GET /vendors`, `/vendors/:id`, `/vendor/:vendorId` – Vendor views fetched from the API; the `user` role receives read-only access.
+- `GET /vendors/:id/edit` – Edit vendor (requires `admin` or `employee` role).
 
-Auth and vendors are mocked client-side so you can test without an API. You can later swap `src/store/vendors.js` with real endpoints and keep the UI.
+All views talk to the backend through the helpers in `src/api/*`, which automatically attach the stored JWT so the API can enforce authorization.
 
 ## API wiring
 
 - The form submits to `POST /api/contacts` via `src/api/index.js`.
-- Configure base URL with an env var: create a `.env` file and set `VITE_API_BASE_URL="http://localhost:3000"` or your server URL. When empty, requests go relative to the app origin (works with the proxy below).
+- Configure the base URL in `.env` with `VITE_API_BASE_URL=http://localhost:4000` (or your server). The Vite dev proxy in `vite.config.js` can still forward `/api/*` if you prefer that setup.
 
-### Dev proxy (optional)
+## Authentication & Roles
 
-`vite.config.js` includes a dev proxy that forwards `/api/*` to `http://localhost:3000`. Change the `target` to match your API. This avoids CORS during development.
+- Sessions persist in `localStorage` under the `auth:session` key and are hydrated by `src/context/AuthContext.jsx`.
+- `src/lib/session.js` exposes helpers to decode JWTs and inject `Authorization` headers for fetch/axios requests.
+- Use the backend's seeded accounts (see backend README) to experiment with the `admin`, `employee`, and `user` roles.
 
 ## Validation
 
 - Client-side validation lives in `src/lib/validation.js`.
 - Errors render under fields and block submit until fixed.
+
