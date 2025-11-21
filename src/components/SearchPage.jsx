@@ -209,7 +209,7 @@ export default function SearchPage() {
               <a
                 className="btn" style={{ background: 'var(--card)' }}
                 // C:\Logisoft\React\vmanagement\backend\backend\uploads
-              //  href={"http://localhost:4000/uploads/csv-upload-errors-1762799333406.csv"}
+              //  href={"http://10.0.12.127:5100/uploads/csv-upload-errors-1762799333406.csv"}
                 
                 href={(`${apiBase}${uploadResult.errorReportUrl}`)}
                 target="_blank"

@@ -4,7 +4,7 @@ import { getDashboardSummary } from '../api/dashboard.js'
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [data, setData] = useState({ vendors: 0, clients: 0, msa: 0 })
+  const [data, setData] = useState({ vendors: 0, clients: 0, msa: 0, activeVendors: 0, inactiveVendors: 0 })
 
   useEffect(() => {
     let active = true
@@ -13,7 +13,7 @@ export default function Dashboard() {
       setError('')
       try {
         const res = await getDashboardSummary()
-        if (active) setData(res || { vendors: 0, clients: 0, msa: 0 })
+        if (active) setData(res || { vendors: 0, clients: 0, msa: 0, activeVendors: 0, inactiveVendors: 0 })
       } catch (e) {
         if (active) setError(e?.message || 'Failed to load dashboard')
       } finally { if (active) setLoading(false) }
@@ -24,6 +24,8 @@ export default function Dashboard() {
 
   const cards = [
     { value: data.vendors, label: 'Total Vendors' },
+    { value: data.activeVendors, label: 'Active Vendors' },
+    { value: data.inactiveVendors, label: 'Inactive Vendors' },
     { value: data.clients, label: 'Total Clients' },
     { value: data.msa, label: 'Total MSA' },
   ]

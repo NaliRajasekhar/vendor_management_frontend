@@ -196,9 +196,18 @@ body {
   color: var(--accent);
   font-weight: 600;
   text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 .text-link:hover {
   text-decoration: underline;
+}
+.range-info {
+  font-weight: 700;
+  color: #0f172a;
+  padding: 8px 12px;
 }
 .highlight-mark {
   background: #fef08a;
