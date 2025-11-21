@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import '../styles/contact.css'
 import { validateForm, firstErrorKey } from '../lib/validation.js'
 import { postContact } from '../api/index.js'
-import { checkVendorEmailUnique } from '../api/vendors.js'
+import { checkVendorEmailUnique, downloadVendorMsa } from '../api/vendors.js'
 import { notifyError, notifySuccess } from '../lib/notify.js'
 import SearchableSelect from './controls/SearchableSelect.jsx'
 
@@ -116,6 +116,7 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
   const [submitted, setSubmitted] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
   const [emailUniqueError, setEmailUniqueError] = useState('')
+  const [viewingMsa, setViewingMsa] = useState(false)
 
   const fieldRefs = useRef({})
   const [msvFile, setMsvFile] = useState(null)
@@ -131,6 +132,7 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
     const KNOWN_DEPTS = ['Engineering','Implementation','Support','Sales']
     const dep = (initialValues.department || '').trim()
     if (dep && !KNOWN_DEPTS.includes(dep)) setDepartmentMode('other'); else setDepartmentMode('list')
+    setMsvFile(null)
   }, [initialValues])
 
   const todayStr = useMemo(() => {
@@ -154,6 +156,7 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
 
   const reset = () => {
     setForm(initialForm)
+    setMsvFile(null)
     setErrors({})
     setTouched({})
     setSubmitting(false)
@@ -162,6 +165,19 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
   }
 
   const currentErrors = useMemo(() => validateForm(form), [form])
+
+  const viewExistingMsa = async () => {
+    if (!form?.id) return
+    try {
+      setViewingMsa(true)
+      await downloadVendorMsa(form.id)
+    } catch (err) {
+      const msg = err?.message || 'Unable to open MSA file'
+      notifyError(msg)
+    } finally {
+      setViewingMsa(false)
+    }
+  }
 
   const submit = async (e) => {
     e.preventDefault()
@@ -422,7 +438,15 @@ export default function ContactForm({ initialValues, onSubmit, submitLabel = 'Sa
           />
           {form.msvFileUrl && (
             <div className="help">
-              Current file: <a href={`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'}/api/vendors/${encodeURIComponent(form.id || '')}/msv`} target="_blank" rel="noreferrer">View</a>
+              Current file:{' '}
+              <button
+                type="button"
+                className="text-link"
+                onClick={viewExistingMsa}
+                disabled={viewingMsa}
+              >
+                {viewingMsa ? 'Opening...' : 'View'}
+              </button>
             </div>
           )}
         </div>

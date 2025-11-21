@@ -41,6 +41,9 @@ export default function VendorsList() {
   const currentPage = Math.floor(offset / limit) + 1
   const totalPages = Math.max(1, Math.ceil((items.length || 1) / limit))
   const isLastPage = offset + limit >= items.length
+  const safeTotal = items.length
+  const rangeStart = safeTotal === 0 ? 0 : offset + 1
+  const rangeEnd = Math.min(offset + pageItems.length, safeTotal)
 
   function formatYmd(input) {
     if (!input) return '-'
@@ -66,6 +69,10 @@ export default function VendorsList() {
         {error && <div className="alert error">{error}</div>}
         {!loading && !error && items.length === 0 && <div className="help" style={{color:'#64748b'}}>No vendors yet. Add one from the form.</div>}
         {!loading && !error && items.length > 0 && (
+          <>
+          <div className="help" style={{ color:'#64748b', padding: '8px 12px' }}>
+            Showing {rangeStart}-{rangeEnd} of {safeTotal} records
+          </div>
           <div className="results-grid vendors vendors-list">
             <div style={{fontWeight:600}}>Client</div>
             <div style={{fontWeight:600}}>Implementation</div>
@@ -105,6 +112,7 @@ export default function VendorsList() {
               </>
             ))}
           </div>
+          </>
         )}
       </div>
       {!loading && items.length > 0 && (

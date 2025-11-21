@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getVendorClientsByVendor } from '../api/search.js'
-import { getVendor } from '../api/vendors.js'
+import { getVendor, downloadVendorMsa } from '../api/vendors.js'
 import { notifyError } from '../lib/notify.js'
 
 export default function VendorPreview() {
@@ -10,8 +10,20 @@ export default function VendorPreview() {
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [downloadingMsa, setDownloadingMsa] = useState(false)
   
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000'
+  const handleMsaView = async () => {
+    if (!item?.id) return
+    try {
+      setDownloadingMsa(true)
+      await downloadVendorMsa(item.id)
+    } catch (err) {
+      const msg = err?.message || 'Unable to open MSA file'
+      notifyError(msg)
+    } finally {
+      setDownloadingMsa(false)
+    }
+  }
 
   useEffect(() => {
     let active = true
@@ -51,7 +63,16 @@ export default function VendorPreview() {
     {
       label: 'MSA File',
       value: (item?.id && item?.msvFileUrl)
-        ? <a className="text-link" href={`${apiBase}/api/vendors/${encodeURIComponent(item.id)}/msv`} target="_blank" rel="noreferrer">View file</a>
+        ? (
+          <button
+            type="button"
+            className="text-link"
+            onClick={handleMsaView}
+            disabled={downloadingMsa}
+          >
+            {downloadingMsa ? 'Opening...' : 'View file'}
+          </button>
+        )
         : '-'
     },
   ]
