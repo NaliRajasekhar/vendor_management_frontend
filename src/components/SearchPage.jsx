@@ -4,10 +4,14 @@ import { searchVendors, searchClients, uploadVendorClientsCsv, searchGlobalVendo
 import RowsPerPage from './controls/RowsPerPage.jsx'
 import { notifyError, notifySuccess } from '../lib/notify.js'
 import { apiBase as apiBase } from '../api/base.js'
+import { authHeader } from '../lib/session.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const escapeRegExp = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 export default function SearchPage() {
+  const { hasRole } = useAuth()
+  const canUpload = hasRole('admin')
   const [mode, setMode] = useState('clients') // 'vendors' | 'clients'
   const [q, setQ] = useState('')
   const [items, setItems] = useState([])
@@ -74,6 +78,7 @@ export default function SearchPage() {
   }
 
   async function onUploadChange(e) {
+    if (!canUpload) return
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
@@ -97,7 +102,7 @@ export default function SearchPage() {
     // Try backend-provided template first, then fallback to local generation
     const url = `${apiBase}/api/bulk/vendor-clients/template`
     try {
-      const res = await fetch(url)
+      const res = await fetch(url, { headers: authHeader() })
       if (res.ok) {
         const blob = await res.blob()
         const a = document.createElement('a')
@@ -177,7 +182,7 @@ export default function SearchPage() {
       </div>
       <div className="card search-controls">      
         <div className="search-input-wrap">
-          <input className="search-input" type="text" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Search vendor, client, email, phone, state, implementation, or contact" style={{minWidth:280}} />
+          <input className="search-input" type="text" value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Search vendor, client, email, phone, state, implementation, status or contact" style={{minWidth:280}} />
           <span className="search-input-icon" aria-hidden="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" />
@@ -186,14 +191,16 @@ export default function SearchPage() {
           </span>
         </div>
         <button className="btn primary" onClick={()=>runSearch(true)} disabled={loading}>Search</button>
-        <label className="btn" style={{cursor:'pointer'}}>
-          {uploading ? 'Uploading…' : 'Upload CSV'}
-          <input type="file" accept=".csv,text/csv" onChange={onUploadChange} style={{display:'none'}} />
-        </label>
+        {canUpload && (
+          <label className="btn" style={{cursor:'pointer'}}>
+            {uploading ? 'Uploading…' : 'Upload CSV'}
+            <input type="file" accept=".csv,text/csv" onChange={onUploadChange} style={{display:'none'}} />
+          </label>
+        )}
       </div>
       
       {error && <div className="alert error">{error}</div>}
-      {uploadResult && (
+      {canUpload && uploadResult && (
         <>
           <div className="alert success">Inserted {uploadResult.inserted} rows, failed {uploadResult.failed}.</div>
           {uploadResult.errorReportUrl && (

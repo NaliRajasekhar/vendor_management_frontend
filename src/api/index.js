@@ -1,6 +1,7 @@
 import axios from 'axios'
 // const base = import.meta.env.VITE_API_BASE_URL
 import { apiBase as base } from './base.js'
+import { authHeader } from '../lib/session.js'
 
 export async function postContact(data) {
   try {
@@ -12,14 +13,14 @@ export async function postContact(data) {
       for (const k of keys) if (typeof data[k] !== 'undefined') form.append(k, String(data[k]))
       form.append('msv', data.msvFile)
       const res = await axios.post(`${base}/api/vendors/with-file`, form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { ...authHeader(), 'Content-Type': 'multipart/form-data' }
       })
       return res.data || {}
     }
 
     // Fallback to JSON if no file
     const res = await axios.post(`${base}/api/vendors`, data, {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { ...authHeader(), 'Content-Type': 'application/json' }
     })
     return res.data || {}
   } catch (err) {
